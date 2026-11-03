@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เกมเป่ายิ้งฉุบท้าทายคอมพิวเตอร์ ป.6 - Halloween Edition</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Mali & Kanit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;700&family=Mali:wght@500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        spooky: {
+                            orange: '#FF7518',
+                            purple: '#4B0082',
+                            darkPurple: '#2A0845',
+                            green: '#39FF14',
+                            dark: '#120E16',
+                            card: '#1F1929'
+                        }
+                    },
+                    fontFamily: {
+                        mali: ['Mali', 'cursive'],
+                        kanit: ['Kanit', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Mali', 'Kanit', cursive, sans-serif;
+            background: linear-gradient(135deg, #120E16 0%, #2A0845 50%, #120E16 100%);
+            min-height: 100vh;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        /* Halloween Custom Scrollbar & Animations */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #120E16;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #FF7518;
+            border-radius: 4px;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(3deg); }
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 15px rgba(255, 117, 24, 0.4); }
+            50% { box-shadow: 0 0 30px rgba(255, 117, 24, 0.8); }
+        }
+
+        .float-animation {
+            animation: float 4s ease-in-out infinite;
+        }
+
+        .glow-orange {
+            animation: pulseGlow 2s infinite;
+        }
+
+        .spooky-border {
+            border: 3px solid #FF7518;
+            box-shadow: 0 0 15px rgba(255, 117, 24, 0.3);
+        }
+
+        .btn-hover-bounce {
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .btn-hover-bounce:hover {
+            transform: scale(1.05);
+        }
+        .btn-hover-bounce:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen justify-between relative selection:bg-spooky-orange selection:text-black">
+
+    <!-- Background Decoration Graphics -->
+    <div class="fixed top-5 left-5 text-4xl opacity-30 float-animation pointer-events-none select-none">🦇</div>
+    <div class="fixed top-20 right-10 text-5xl opacity-30 float-animation pointer-events-none select-none" style="animation-delay: 1s;">🎃</div>
+    <div class="fixed bottom-10 left-10 text-5xl opacity-30 float-animation pointer-events-none select-none" style="animation-delay: 2s;">👻</div>
+    <div class="fixed bottom-5 right-5 text-4xl opacity-30 float-animation pointer-events-none select-none" style="animation-delay: 1.5s;">🕷️</div>
+
+    <!-- Background Music Audio / Iframe Helper -->
+    <div id="youtube-player" class="hidden"></div>
+
+    <!-- Header Section -->
+    <header class="w-full max-w-4xl mx-auto p-4 flex justify-between items-center z-10">
+        <div class="flex items-center space-x-2">
+            <span class="text-3xl">🎃</span>
+            <h1 class="text-xl md:text-2xl font-bold text-spooky-orange tracking-wide drop-shadow-md">
+                ฮาโลวีนคอมพิวเตอร์ ป.6
+            </h1>
+        </div>
+        
+        <!-- Controls: Music Toggle & Score Indicator -->
+        <div class="flex items-center space-x-3">
+            <button id="music-toggle-btn" onclick="toggleAudio()" class="bg-spooky-purple hover:bg-purple-800 text-white p-2.5 px-4 rounded-full border border-spooky-orange flex items-center space-x-2 btn-hover-bounce shadow-lg">
+                <i id="music-icon" class="fas fa-volume-mute text-red-400"></i>
+                <span id="music-text" class="text-sm font-semibold">ปิดเสียง</span>
+            </button>
+
+            <div class="bg-spooky-card border-2 border-spooky-orange px-4 py-1.5 rounded-full flex items-center space-x-2">
+                <i class="fas fa-trophy text-yellow-400"></i>
+                <span class="text-sm">คะแนน: <span id="current-score" class="font-bold text-spooky-green text-lg">0</span>/20</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="w-full max-w-4xl mx-auto p-4 flex-grow flex flex-col justify-center items-center z-10">
+
+        <!-- START SCREEN -->
+        <div id="start-screen" class="bg-spooky-card/90 backdrop-blur-md p-6 md:p-10 rounded-3xl spooky-border text-center max-w-lg w-full glow-orange">
+            <div class="text-6xl mb-4 float-animation">👻💻</div>
+            <h2 class="text-2xl md:text-3xl font-bold text-spooky-orange mb-3">เป่ายิ้งฉุบท้าทายคอมพิวเตอร์</h2>
+            <p class="text-gray-300 text-sm md:text-base mb-6 leading-relaxed">
+                เอาชนะเจ้าผีน้อยเป่ายิ้งฉุบเพื่อปลดล็อกคำถามวิชาคอมพิวเตอร์ ป.6 ตอบถูกรับคะแนนและพบกับ <span class="text-yellow-400 font-bold">LeBron James</span> มาให้กำลังใจ!
+            </p>
+            <div class="bg-spooky-dark/60 p-4 rounded-xl mb-6 text-left border border-purple-900/50 text-xs md:text-sm text-gray-300 space-y-1">
+                <p>📌 <strong>กติกา:</strong></p>
+                <p>1. เป่ายิ้งฉุบให้ <span class="text-spooky-green">ชนะ</span> บอทผีน้อย</p>
+                <p>2. ตอบคำถามคอมพิวเตอร์ 20 ข้อ (ข้อละ 20 วินาที)</p>
+                <p>3. ตอบถูกได้ +1 คะแนน พร้อมมินิเฉลิมฉลอง!</p>
+            </div>
+            <button onclick="startGame()" class="w-full bg-gradient-to-r from-spooky-orange to-amber-600 hover:from-orange-600 hover:to-amber-700 text-black font-bold text-lg py-3 px-8 rounded-2xl shadow-xl btn-hover-bounce">
+                🚀 เริ่มเล่นเกมเลย!
+            </button>
+        </div>
+
+        <!-- GAMEPLAY CONTAINER -->
+        <div id="game-container" class="w-full hidden flex-col items-center">
+            
+            <!-- Progress Tracker -->
+            <div class="w-full bg-spooky-card/80 p-3 rounded-2xl spooky-border mb-4 flex justify-between items-center text-sm md:text-base">
+                <div>ข้อที่: <span id="question-number" class="text-spooky-orange font-bold">1</span> / 20</div>
+                <!-- Timer Bar -->
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-clock text-spooky-orange animate-spin"></i>
+                    <span id="timer-text" class="font-bold text-xl text-yellow-400">20</span> วินาที
+                </div>
+            </div>
+
+            <!-- PHASE 1: ROCK PAPER SCISSORS -->
+            <div id="rps-phase" class="w-full bg-spooky-card/90 backdrop-blur-md p-6 rounded-3xl spooky-border text-center">
+                <h3 class="text-xl md:text-2xl font-bold text-spooky-orange mb-2">ด่านที่ 1: เป่ายิ้งฉุบให้ชนะผีน้อย! 🎃</h3>
+                <p class="text-gray-300 text-sm mb-6">เลือกเป่ายิ้งฉุบเพื่อสู้กับบอท ถ้าชนะจะได้เข้าสู่คำถาม!</p>
+
+                <!-- Battle Field -->
+                <div class="grid grid-cols-2 gap-4 max-w-md mx-auto mb-6 bg-spooky-dark/80 p-4 rounded-2xl border border-purple-800/40">
+                    <!-- Player Choice -->
+                    <div class="flex flex-col items-center">
+                        <span class="text-sm text-gray-400 mb-2">ตัวคุณ 🧑‍🎓</span>
+                        <div id="player-hand" class="text-5xl md:text-6xl my-2 transform -scale-x-100">❓</div>
+                        <span id="player-hand-label" class="text-xs text-spooky-orange font-semibold">รอการเลือก...</span>
+                    </div>
+
+                    <!-- Bot Choice -->
+                    <div class="flex flex-col items-center">
+                        <span class="text-sm text-gray-400 mb-2">บอทผีน้อย 👻</span>
+                        <div id="bot-hand" class="text-5xl md:text-6xl my-2">❓</div>
+                        <span id="bot-hand-label" class="text-xs text-purple-400 font-semibold">รอดวล...</span>
+                    </div>
+                </div>
+
+                <!-- RPS Status Message -->
+                <div id="rps-status" class="min-h-[40px] text-lg font-bold mb-6 text-yellow-300">
+                    พร้อมแล้ว เลือกการออกอาวุธของคุณเลย!
+                </div>
+
+                <!-- RPS Buttons -->
+                <div class="flex justify-center space-x-3 md:space-x-6">
+                    <button onclick="playRPS('rock')" class="bg-spooky-dark hover:bg-spooky-purple border-2 border-spooky-orange text-3xl md:text-4xl p-4 md:p-5 rounded-2xl btn-hover-bounce flex flex-col items-center shadow-lg">
+                        <span>✊</span>
+                        <span class="text-xs mt-1 text-white font-normal">ค้อน</span>
+                    </button>
+                    <button onclick="playRPS('paper')" class="bg-spooky-dark hover:bg-spooky-purple border-2 border-spooky-orange text-3xl md:text-4xl p-4 md:p-5 rounded-2xl btn-hover-bounce flex flex-col items-center shadow-lg">
+                        <span>✋</span>
+                        <span class="text-xs mt-1 text-white font-normal">กระดาษ</span>
+                    </button>
+                    <button onclick="playRPS('scissors')" class="bg-spooky-dark hover:bg-spooky-purple border-2 border-spooky-orange text-3xl md:text-4xl p-4 md:p-5 rounded-2xl btn-hover-bounce flex flex-col items-center shadow-lg">
+                        <span>✌️</span>
+                        <span class="text-xs mt-1 text-white font-normal">กรรไกร</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- PHASE 2: QUESTION PHASE -->
+            <div id="question-phase" class="w-full hidden bg-spooky-card/90 backdrop-blur-md p-6 rounded-3xl spooky-border">
+                <div class="flex items-center justify-between mb-4">
+                    <span class="bg-spooky-green/20 text-spooky-green border border-spooky-green text-xs font-bold px-3 py-1 rounded-full">
+                        ปลดล็อกคำถามแล้ว! ✨
+                    </span>
+                    <span class="text-xs text-gray-400">อุปกรณ์คอมพิวเตอร์ ป.6</span>
+                </div>
+
+                <!-- Question Text -->
+                <h3 id="question-text" class="text-lg md:text-xl font-bold text-white mb-6 leading-relaxed bg-spooky-dark/60 p-4 rounded-2xl border border-purple-900/50">
+                    คำถามกำลังโหลด...
+                </h3>
+
+                <!-- Options Grid -->
+                <div id="options-grid" class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mb-4">
+                    <!-- Options populated by JS -->
+                </div>
+            </div>
+
+        </div>
+
+        <!-- END GAME / SUMMARY SCREEN -->
+        <div id="end-screen" class="w-full max-w-lg hidden bg-spooky-card/90 backdrop-blur-md p-6 md:p-8 rounded-3xl spooky-border text-center glow-orange">
+            <div class="text-6xl mb-4">🏆🎃</div>
+            <h2 class="text-2xl md:text-3xl font-bold text-spooky-orange mb-2">สรุปผลการแข่งขัน!</h2>
+            <p class="text-gray-300 text-sm mb-6">คุณได้ทำการเป่ายิ้งฉุบและตอบคำถามครบทั้ง 20 ข้อแล้ว</p>
+
+            <div class="bg-spooky-dark/80 p-6 rounded-2xl border border-spooky-orange/40 mb-6 space-y-3">
+                <div class="text-gray-400 text-sm">คะแนนรวมที่คุณได้</div>
+                <div class="text-5xl font-bold text-spooky-green"><span id="final-score">0</span> / 20</div>
+                <div id="score-evaluation" class="text-base font-semibold text-yellow-300 pt-2 border-t border-purple-900">
+                    สุดยอดความสามารถ!
+                </div>
+            </div>
+
+            <button onclick="restartGame()" class="w-full bg-gradient-to-r from-spooky-orange to-amber-600 hover:from-orange-600 hover:to-amber-700 text-black font-bold text-lg py-3 px-8 rounded-2xl shadow-xl btn-hover-bounce">
+                🔄 เล่นใหม่อีกครั้ง
+            </button>
+        </div>
+
+    </main>
+
+    <!-- LEBRON JAMES CELEBRATION MODAL -->
+    <div id="celebration-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex justify-center items-center p-4">
+        <div class="bg-spooky-card border-4 border-yellow-400 p-6 rounded-3xl max-w-md w-full text-center shadow-2xl relative transform transition-all scale-95">
+            <!-- Glowing background effect -->
+            <div class="absolute -top-12 left-1/2 -translate-x-1/2 text-5xl animate-bounce">👑</div>
+
+            <h3 class="text-2xl font-bold text-yellow-400 mb-1 mt-2">ถูกต้องแล้วครับ!</h3>
+            <p class="text-xs text-spooky-green mb-4 font-semibold">+1 คะแนน! King James ร่วมฉลองความสำเร็จ!</p>
+
+            <!-- LeBron James Image -->
+            <div class="w-full h-56 md:h-64 rounded-2xl overflow-hidden mb-4 border-2 border-yellow-500/50 bg-black flex justify-center items-center">
+                <img id="lebron-img" src="https://media.giphy.com/media/bMJqfOtgVEyI2PLqCW/giphy.gif" alt="LeBron James Celebration" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/400x300/2A0845/FF7518?text=LeBron+James+Approves!+👑'">
+            </div>
+
+            <div id="lebron-quote" class="text-sm font-semibold text-gray-200 mb-6 bg-spooky-dark/80 p-3 rounded-xl border border-yellow-500/30">
+                "เยี่ยมมากน้องๆ! เรียนรู้เรื่องคอมพิวเตอร์อย่างชาญฉลาด!"
+            </div>
+
+            <button onclick="nextTurn()" class="w-full bg-spooky-green hover:bg-green-500 text-black font-bold text-lg py-3 px-6 rounded-xl shadow-lg btn-hover-bounce">
+                ข้อต่อไป ➡️
+            </button>
+        </div>
+    </div>
+
+    <!-- WRONG ANSWER MODAL -->
+    <div id="wrong-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex justify-center items-center p-4">
+        <div class="bg-spooky-card border-4 border-red-500 p-6 rounded-3xl max-w-md w-full text-center shadow-2xl relative">
+            <div class="text-5xl mb-2">👻💥</div>
+            <h3 class="text-2xl font-bold text-red-400 mb-2">ยังไม่ถูกต้อง / หมดเวลา!</h3>
+            <p class="text-xs text-gray-300 mb-4">ไม่ต้องเสียใจนะ ลองศึกษาคำตอบที่ถูกต้องตามนี้:</p>
+
+            <div class="bg-spooky-dark/80 p-4 rounded-xl border border-red-500/30 mb-6 text-left text-sm space-y-2">
+                <p class="text-red-300">❌ <span id="wrong-explanation">คำตอบยังไม่ถูกต้อง</span></p>
+                <p class="text-spooky-green font-semibold">✅ คำตอบที่ถูกคือ: <span id="correct-answer-text" class="text-white">...</span></p>
+            </div>
+
+            <button onclick="nextTurn()" class="w-full bg-spooky-purple hover:bg-purple-700 text-white font-bold text-lg py-3 px-6 rounded-xl shadow-lg btn-hover-bounce">
+                ไปข้อถัดไป ➡️
+            </button>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="w-full text-center p-4 text-xs text-gray-500 border-t border-purple-900/30 z-10">
+        สื่อการเรียนรู้เชิงโต้ตอบ คอมพิวเตอร์ ป.6 🎃 ธีมฮาโลวีน
+    </footer>
+
+    <!-- YouTube API Script -->
+    <script src="https://www.youtube.com/iframe_api"></script>
+
+    <script>
+        /* ==================== 20 COMPUTER HARDWARE QUESTIONS (ป.6) ==================== */
+        const questionsDB = [
+            {
+                q: "อุปกรณ์ใดเปรียบเสมือน 'สมอง' ของคอมพิวเตอร์ คอยทำหน้าที่ประมวลผลคำสั่งทั้งหมด?",
+                options: ["ฮาร์ดดิสก์ (Hard Disk)", "ซีพียู (CPU)", "แรม (RAM)", "จอภาพ (Monitor)"],
+                answer: 1,
+                explain: "CPU (Central Processing Unit) คือหน่วยประมวลผลกลาง ทำหน้าที่คิดและประมวลผลหลัก"
+            },
+            {
+                q: "หน่วยความจำหลักชนิดใดที่เก็บข้อมูลชั่วขณะ และข้อมูลจะหายไปเมื่อปิดเครื่องคอมพิวเตอร์?",
+                options: ["RAM", "ROM", "Hard Disk", "Flash Drive"],
+                answer: 0,
+                explain: "RAM เป็นหน่วยความจำแบบชั่วคราว ข้อมูลจะสูญหายทันทีเมื่อไม่มีกระแสไฟฟ้าเลี้ยง"
+            },
+            {
+                q: "อุปกรณ์ใดทำหน้าที่แสดงผลภาพและวิดีโอออกมาให้ผู้ใช้มองเห็น?",
+                options: ["เมาส์ (Mouse)", "คีย์บอร์ด (Keyboard)", "จอภาพ (Monitor)", "สแกนเนอร์ (Scanner)"],
+                answer: 2,
+                explain: "จอภาพ (Monitor) เป็นอุปกรณ์แสดงผล (Output Device) ในรูปแบบภาพ"
+            },
+            {
+                q: "อุปกรณ์ใดเป็นแผงวงจรหลักที่เชื่อมต่ออุปกรณ์ภายในคอมพิวเตอร์ทั้งหมดเข้าด้วยกัน?",
+                options: ["พาวเวอร์ซัพพลาย (Power Supply)", "เมนบอร์ด (Motherboard)", "การ์ดจอ (GPU)", "เคส (Case)"],
+                answer: 1,
+                explain: "เมนบอร์ด (Motherboard) เป็นแผงวงจรหลักที่เปรียบเหมือนศูนย์กลางการเชื่อมต่อ"
+            },
+            {
+                q: "อุปกรณ์ใดทำหน้าที่จ่ายกระแสไฟฟ้าให้กับชิ้นส่วนต่างๆ ภายในเครื่องคอมพิวเตอร์?",
+                options: ["Power Supply", "Hard Disk", "CPU", "UPS"],
+                answer: 0,
+                explain: "Power Supply ทำหน้าที่เปลี่ยนและแปลงไฟบ้านเพื่อจ่ายไฟฟ้าให้อุปกรณ์คอมพิวเตอร์"
+            },
+            {
+                q: "หากต้องการบันทึกไฟล์งานขนาดใหญ่เก็บไว้ถาวรในเครื่องคอมพิวเตอร์ ควรเก็บไว้ที่อุปกรณ์ใด?",
+                options: ["RAM", "CPU", "ฮาร์ดดิสก์ (Hard Disk / SSD)", "แผ่นซีดีเพลง"],
+                answer: 2,
+                explain: "ฮาร์ดดิสก์หรือ SSD เป็นหน่วยความจำสำรองหลักสำหรับบันทึกข้อมูลถาวร"
+            },
+            {
+                q: "อุปกรณ์ใดเป็นอุปกรณ์รับข้อมูล (Input Device) ที่ใช้พิมพ์ตัวอักษรและตัวเลข?",
+                options: ["ลำโพง (Speaker)", "คีย์บอร์ด (Keyboard)", "เครื่องพิมพ์ (Printer)", "จอภาพ (Monitor)"],
+                answer: 1,
+                explain: "คีย์บอร์ดหรือแป้นพิมพ์ ใช้ส่งข้อมูลตัวอักษรและคำสั่งเข้าสู่คอมพิวเตอร์"
+            },
+            {
+                q: "หากต้องการส่งภาพเอกสารกระดาษเข้าสู่เครื่องคอมพิวเตอร์ ควรใช้อุปกรณ์ใด?",
+                options: ["เครื่องพิมพ์ (Printer)", "สแกนเนอร์ (Scanner)", "พล็อตเตอร์ (Plotter)", "เมาส์ (Mouse)"],
+                answer: 1,
+                explain: "สแกนเนอร์ทำหน้าที่เปลี่ยนภาพหรือเอกสารกระดาษให้เป็นไฟล์ดิจิทัล"
+            },
+            {
+                q: "อุปกรณ์ใดประมวลผลสัญญาณภาพโดยเฉพาะ ช่วยให้การเล่นเกมหรือการตัดต่อวิดีโอไหลลื่น?",
+                options: ["การ์ดจอ (GPU / Graphic Card)", "การ์ดเสียง (Sound Card)", "การ์ดแลน (LAN Card)", "RAM"],
+                answer: 0,
+                explain: "การ์ดแสดงผล (GPU) รับหน้าที่ประมวลผลภาพกราฟิก 2D และ 3D"
+            },
+            {
+                q: "อุปกรณ์ใดส่งผลลัพธ์เป็น 'เสียง' ออกมาจากคอมพิวเตอร์?",
+                options: ["ไมโครโฟน (Microphone)", "ลำโพง (Speaker)", "เว็บแคม (Webcam)", "การ์ดจอ (GPU)"],
+                answer: 1,
+                explain: "ลำโพงทำหน้าที่แปลงสัญญาณไฟฟ้าเป็นคลื่นเสียงส่งออกมาให้เราได้ยิน"
+            },
+            {
+                q: "อุปกรณ์ใดใช้รับเสียงพูดของผู้ใช้ส่งเข้าไปในคอมพิวเตอร์?",
+                options: ["ลำโพง (Speaker)", "หูฟัง (Headphone)", "ไมโครโฟน (Microphone)", "กล้องเว็บแคม"],
+                answer: 2,
+                explain: "ไมโครโฟนทำหน้าที่รับเสียงเพื่อนำไปบันทึกหรือใช้ในการสื่อสาร"
+            },
+            {
+                q: "อุปกรณ์พกพาขนาดเล็กชนิดใดใช้เชื่อมต่อผ่านช่อง USB เพื่อย้ายข้อมูลได้สะดวก?",
+                options: ["Flash Drive", "Internal Hard Disk", "RAM", "ROM"],
+                answer: 0,
+                explain: "แฟลชไดรฟ์ (Flash Drive) เป็นอุปกรณ์เก็บข้อมูลสำรองแบบพกพายอดนิยม"
+            },
+            {
+                q: "อุปกรณ์ใดทำหน้าที่เชื่อมต่อสัญญาณอินเทอร์เน็ตมายังเครื่องคอมพิวเตอร์?",
+                options: ["เราเตอร์ (Router)", "เครื่องพิมพ์ (Printer)", "พาวเวอร์ซัพพลาย", "ซีพียู"],
+                answer: 0,
+                explain: "เราเตอร์ (Router) ทำหน้าที่รับและกระจายสัญญาณเครือข่ายอินเทอร์เน็ต"
+            },
+            {
+                q: "อุปกรณ์ใดทำหน้าที่พิมพ์ข้อมูลจากคอมพิวเตอร์ลงบนกระดาษ?",
+                options: ["สแกนเนอร์ (Scanner)", "เครื่องพิมพ์ (Printer)", "จอภาพ (Monitor)", "คีย์บอร์ด (Keyboard)"],
+                answer: 1,
+                explain: "เครื่องพิมพ์ (Printer) แปลงข้อมูลดิจิทัลออกมารูปแบบสิ่งพิมพ์บนกระดาษ"
+            },
+            {
+                q: "อุปกรณ์ชนิดใดใช้จับภาพวิดีโอของผู้ใช้เพื่อถ่ายทอดสดหรือประชุมออนไลน์?",
+                options: ["สแกนเนอร์", "กล้องเว็บแคม (Webcam)", "โปรเจกเตอร์", "การ์ดแสดงผล"],
+                answer: 1,
+                explain: "Webcam เป็นกล้องที่ใช้จับภาพและวิดีโอส่งเข้าสู่ระบบคอมพิวเตอร์"
+            },
+            {
+                q: "พอร์ต หรือ ช่องเชื่อมต่อชนิดใดที่เป็นมาตรฐานใช้อย่างแพร่หลายสำหรับ เมาส์, คีย์บอร์ด, และ แฟลชไดรฟ์?",
+                options: ["HDMI", "VGA", "USB", "Audio Jack"],
+                answer: 2,
+                explain: "USB (Universal Serial Bus) เป็นพอร์ตเชื่อมต่อมาตรฐานหลักของคอมพิวเตอร์"
+            },
+            {
+                q: "อุปกรณ์ใดทำหน้าที่สำรองไฟฟ้าให้คอมพิวเตอร์ทำงานต่อได้ชั่วคราวเมื่อไฟดับ?",
+                options: ["Power Supply", "UPS (เครื่องสำรองไฟ)", "Mainboard", "Battery CR2032"],
+                answer: 1,
+                explain: "UPS (Uninterruptible Power Supply) ช่วยจ่ายไฟสำรองและป้องกันเครื่องเสียหาย"
+            },
+            {
+                q: "องค์ประกอบคอมพิวเตอร์ที่จับต้องได้ เช่น CPU, RAM, Monitor เรียกรวมกันว่าอะไร?",
+                options: ["ซอฟต์แวร์ (Software)", "ฮาร์ดแวร์ (Hardware)", "พีเพิลแวร์ (Peopleware)", "ข้อมูล (Data)"],
+                answer: 1,
+                explain: "ฮาร์ดแวร์ (Hardware) หมายถึง อุปกรณ์ตัวเครื่องและชิ้นส่วนคอมพิวเตอร์ที่จับต้องได้"
+            },
+            {
+                q: "พอร์ตชนิดใดนิยมใช้ส่งทั้งสัญญาณ 'ภาพและเสียง' คุณภาพสูงไปยังจอภาพหรือทีวี?",
+                options: ["VGA", "HDMI", "USB", "LAN"],
+                answer: 1,
+                explain: "HDMI สามารถส่งได้ทั้งสัญญาณภาพดิจิทัลคมชัดสูงและสัญญาณเสียงในสายเส้นเดียว"
+            },
+            {
+                q: "พัดลมระบายความร้อน (Cooling Fan) มีความสำคัญอย่างไรกับคอมพิวเตอร์?",
+                options: ["ช่วยให้คอมพิวเตอร์ประมวลผลเร็วขึ้น 2 เท่า", "ช่วยลดความร้อนของอุปกรณ์ เช่น CPU ไม่ให้ร้อนเกินไป", "ช่วยให้หน้าจอมีความสว่างมากขึ้น", "ช่วยเพิ่มความจุของฮาร์ดดิสก์"],
+                answer: 1,
+                explain: "พัดลมและซิงก์ระบายความร้อนช่วยถ่ายเทความร้อนออกจากอุปกรณ์ป้องกันความเสียหาย"
+            }
+        ];
+
+        /* ==================== LEBRON JAMES GIFS & QUOTES ==================== */
+        const lebronData = [
+            {
+                img: "https://media.giphy.com/media/bMJqfOtgVEyI2PLqCW/giphy.gif",
+                quote: "“สุดยอดมาก! เก่งคอมพิวเตอร์แบบนี้ อนาคตสดใสแน่นอน!” - LeBron James 👑"
+            },
+            {
+                img: "https://media.giphy.com/media/xT1XGzAnABSXy8DPCU/giphy.gif",
+                quote: "“ความพยายามไม่เคยทรยศใคร ตอบถูกอีกแล้ว!” - King James 🏀"
+            },
+            {
+                img: "https://media.giphy.com/media/3o7aD0D3K9P9oG0WkM/giphy.gif",
+                quote: "“ฉลาดมากๆ! ป.6 คอมพิวเตอร์ตัวจริงอยู่นี่เอง!” - LeBron James ✨"
+            }
+        ];
+
+        /* ==================== GAME STATE VARIABLES ==================== */
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let timerInterval = null;
+        let timeLeft = 20;
+        let isAudioPlaying = false;
+        let playerPlayer = null;
+
+        /* Sound FX Synthesizer via Web Audio API */
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSoundFx(type) {
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'win') {
+                // Victory tone
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(440, audioCtx.currentTime); // A4
+                osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.3); // A5
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'lose') {
+                // Wrong tone
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(110, audioCtx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'click') {
+                // Click tone
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.05);
+            }
+        }
+
+        /* ==================== YOUTUBE AUDIO BACKGROUND ==================== */
+        function onYouTubeIframeAPIReady() {
+            playerPlayer = new YT.Player('youtube-player', {
+                height: '0',
+                width: '0',
+                videoId: 'EwCvXXFCv0E',
+                playerVars: {
+                    'autoplay': 0,
+                    'loop': 1,
+                    'playlist': 'EwCvXXFCv0E',
+                    'controls': 0
+                },
+                events: {
+                    'onReady': onPlayerReady
+                }
+            });
+        }
+
+        function onPlayerReady(event) {
+            // Player ready
+        }
+
+        function toggleAudio() {
+            const musicIcon = document.getElementById('music-icon');
+            const musicText = document.getElementById('music-text');
+
+            if (!isAudioPlaying) {
+                if (playerPlayer && playerPlayer.playVideo) {
+                    playerPlayer.playVideo();
+                }
+                isAudioPlaying = true;
+                musicIcon.className = "fas fa-volume-up text-spooky-green animate-pulse";
+                musicText.innerText = "เปิดเสียง";
+            } else {
+                if (playerPlayer && playerPlayer.pauseVideo) {
+                    playerPlayer.pauseVideo();
+                }
+                isAudioPlaying = false;
+                musicIcon.className = "fas fa-volume-mute text-red-400";
+                musicText.innerText = "ปิดเสียง";
+            }
+        }
+
+        /* ==================== GAME LOGIC ==================== */
+
+        function startGame() {
+            playSoundFx('click');
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('game-container').classList.remove('hidden');
+            document.getElementById('game-container').classList.add('flex');
+            currentQuestionIndex = 0;
+            score = 0;
+            updateScoreDisplay();
+            initTurn();
+        }
+
+        function initTurn() {
+            // Update Progress Header
+            document.getElementById('question-number').innerText = currentQuestionIndex + 1;
+            
+            // Show RPS Phase, Hide Question Phase
+            document.getElementById('rps-phase').classList.remove('hidden');
+            document.getElementById('question-phase').classList.add('hidden');
+
+            // Reset RPS UI
+            document.getElementById('player-hand').innerText = "❓";
+            document.getElementById('bot-hand').innerText = "❓";
+            document.getElementById('player-hand-label').innerText = "รอการเลือก...";
+            document.getElementById('bot-hand-label').innerText = "รอดวล...";
+            document.getElementById('rps-status').innerText = "พร้อมแล้ว เลือกการออกอาวุธของคุณเลย!";
+            document.getElementById('rps-status').className = "min-h-[40px] text-lg font-bold mb-6 text-yellow-300";
+
+            // Reset Timer Text
+            clearInterval(timerInterval);
+            document.getElementById('timer-text').innerText = "20";
+        }
+
+        function playRPS(playerChoice) {
+            playSoundFx('click');
+            const choices = ['rock', 'paper', 'scissors'];
+            const botChoice = choices[Math.floor(Math.random() * choices.length)];
+
+            const icons = {
+                rock: '✊',
+                paper: '✋',
+                scissors: '✌️'
+            };
+
+            const labels = {
+                rock: 'ค้อน',
+                paper: 'กระดาษ',
+                scissors: 'กรรไกร'
+            };
+
+            document.getElementById('player-hand').innerText = icons[playerChoice];
+            document.getElementById('player-hand-label').innerText = labels[playerChoice];
+
+            document.getElementById('bot-hand').innerText = icons[botChoice];
+            document.getElementById('bot-hand-label').innerText = labels[botChoice];
+
+            const statusEl = document.getElementById('rps-status');
+
+            // Determine Winner
+            if (playerChoice === botChoice) {
+                // Tie
+                statusEl.innerText = "เสมอ ! เป่ายิ้งฉุบใหม่อีกรอบนะ!";
+                statusEl.className = "min-h-[40px] text-lg font-bold mb-6 text-yellow-400";
+            } else if (
+                (playerChoice === 'rock' && botChoice === 'scissors') ||
+                (playerChoice === 'paper' && botChoice === 'rock') ||
+                (playerChoice === 'scissors' && botChoice === 'paper')
+            ) {
+                // Player Wins
+                playSoundFx('win');
+                statusEl.innerText = "🎉 ชนะเป่ายิ้งฉุบ! เข้าสู่คำถาม...";
+                statusEl.className = "min-h-[40px] text-lg font-bold mb-6 text-spooky-green animate-bounce";
+
+                setTimeout(() => {
+                    startQuestionPhase();
+                }, 1000);
+            } else {
+                // Bot Wins
+                playSoundFx('lose');
+                statusEl.innerText = "👻 ผีน้อยชนะ! ลองเป่ายิ้งฉุบใหม่อีกรอบนะ!";
+                statusEl.className = "min-h-[40px] text-lg font-bold mb-6 text-red-400";
+            }
+        }
+
+        function startQuestionPhase() {
+            document.getElementById('rps-phase').classList.add('hidden');
+            document.getElementById('question-phase').classList.remove('hidden');
+
+            const currentQ = questionsDB[currentQuestionIndex];
+            document.getElementById('question-text').innerText = `${currentQuestionIndex + 1}. ${currentQ.q}`;
+
+            const optionsContainer = document.getElementById('options-grid');
+            optionsContainer.innerHTML = '';
+
+            currentQ.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "bg-spooky-dark hover:bg-spooky-purple border-2 border-purple-800 hover:border-spooky-orange text-left p-4 rounded-2xl text-white text-sm md:text-base font-medium btn-hover-bounce transition-all flex items-start space-x-3";
+                btn.onclick = () => checkAnswer(idx);
+
+                const optionLetter = ['ก', 'ข', 'ค', 'ง'][idx];
+                btn.innerHTML = `
+                    <span class="bg-spooky-orange text-black font-bold w-6 h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0 mt-0.5">${optionLetter}</span>
+                    <span>${opt}</span>
+                `;
+                optionsContainer.appendChild(btn);
+            });
+
+            // Start 20-second Countdown Timer
+            startTimer();
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timeLeft = 20;
+            document.getElementById('timer-text').innerText = timeLeft;
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer-text').innerText = timeLeft;
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    handleTimeOut();
+                }
+            }, 1000);
+        }
+
+        function checkAnswer(selectedIndex) {
+            clearInterval(timerInterval);
+            const currentQ = questionsDB[currentQuestionIndex];
+
+            if (selectedIndex === currentQ.answer) {
+                // Correct
+                score++;
+                updateScoreDisplay();
+                playSoundFx('win');
+                triggerConfetti();
+                showLeBronModal();
+            } else {
+                // Incorrect
+                playSoundFx('lose');
+                showWrongModal(false, selectedIndex);
+            }
+        }
+
+        function handleTimeOut() {
+            playSoundFx('lose');
+            showWrongModal(true, -1);
+        }
+
+        function showLeBronModal() {
+            const randomLeBron = lebronData[Math.floor(Math.random() * lebronData.length)];
+            document.getElementById('lebron-img').src = randomLeBron.img;
+            document.getElementById('lebron-quote').innerText = randomLeBron.quote;
+
+            const modal = document.getElementById('celebration-modal');
+            modal.classList.remove('hidden');
+        }
+
+        function showWrongModal(isTimeout, selectedIndex) {
+            const currentQ = questionsDB[currentQuestionIndex];
+            const explanationEl = document.getElementById('wrong-explanation');
+            const correctAnswerEl = document.getElementById('correct-answer-text');
+
+            if (isTimeout) {
+                explanationEl.innerText = "หมดเวลา 20 วินาที!";
+            } else {
+                explanationEl.innerText = `คุณเลือก: ${currentQ.options[selectedIndex]}`;
+            }
+
+            correctAnswerEl.innerText = `${currentQ.options[currentQ.answer]} (${currentQ.explain})`;
+
+            const modal = document.getElementById('wrong-modal');
+            modal.classList.remove('hidden');
+        }
+
+        function nextTurn() {
+            playSoundFx('click');
+            document.getElementById('celebration-modal').classList.add('hidden');
+            document.getElementById('wrong-modal').classList.add('hidden');
+
+            currentQuestionIndex++;
+
+            if (currentQuestionIndex < questionsDB.length) {
+                initTurn();
+            } else {
+                showEndScreen();
+            }
+        }
+
+        function updateScoreDisplay() {
+            document.getElementById('current-score').innerText = score;
+        }
+
+        function showEndScreen() {
+            document.getElementById('game-container').classList.add('hidden');
+            document.getElementById('end-screen').classList.remove('hidden');
+
+            document.getElementById('final-score').innerText = score;
+
+            const evalEl = document.getElementById('score-evaluation');
+            if (score >= 18) {
+                evalEl.innerText = "🌟 ระดับอัจฉริยะไอที! (ยอดเยี่ยมมาก)";
+                evalEl.className = "text-base font-semibold text-spooky-green pt-2 border-t border-purple-900";
+            } else if (score >= 14) {
+                evalEl.innerText = "👍 เก่งมาก! ความรู้แน่นหนา";
+                evalEl.className = "text-base font-semibold text-yellow-300 pt-2 border-t border-purple-900";
+            } else if (score >= 10) {
+                evalEl.innerText = "🙂 ผ่านเกณฑ์มาตรฐาน ลองทบทวนเพิ่มเติมน้า";
+                evalEl.className = "text-base font-semibold text-orange-400 pt-2 border-t border-purple-900";
+            } else {
+                evalEl.innerText = "✌️ ไม่เป็นไรนะ ลองเล่นใหม่อีกครั้งเพื่อฝึกฝน!";
+                evalEl.className = "text-base font-semibold text-red-400 pt-2 border-t border-purple-900";
+            }
+
+            triggerConfetti();
+        }
+
+        function restartGame() {
+            playSoundFx('click');
+            document.getElementById('end-screen').classList.add('hidden');
+            startGame();
+        }
+
+        function triggerConfetti() {
+            try {
+                confetti({
+                    particleCount: 70,
+                    spread: 60,
+                    origin: { y: 0.6 },
+                    colors: ['#FF7518', '#39FF14', '#4B0082', '#FFD700']
+                });
+            } catch(e) {
+                // Fallback if confetti fails
+            }
+        }
+    </script>
+</body>
+</html>
